@@ -9,10 +9,10 @@ export const API_ENDPOINTS = {
   // deleteMovie: 'http://localhost:8000/api/movies/delete',
   // bookSeats: 'http://localhost:8000/api/bookings',
 
-  // For production deployment - UPDATE THESE URLs after deploying backend
-  getMovies: 'https://your-backend-domain.com/api/movies',
-  createMovie: 'https://your-backend-domain.com/api/movies',
-  updateMovie: 'https://your-backend-domain.com/api/movies/update',
-  deleteMovie: 'https://your-backend-domain.com/api/movies/delete',
-  bookSeats: 'https://your-backend-domain.com/api/bookings',
+  // For production deployment
+  getMovies: 'https://online-movie-ticket-booking-production.up.railway.app/api/movies',
+  createMovie: 'https://online-movie-ticket-booking-production.up.railway.app/api/movies',
+  updateMovie: 'https://online-movie-ticket-booking-production.up.railway.app/api/movies/update',
+  deleteMovie: 'https://online-movie-ticket-booking-production.up.railway.app/api/movies/delete',
+  bookSeats: 'https://online-movie-ticket-booking-production.up.railway.app/api/bookings',
 };
