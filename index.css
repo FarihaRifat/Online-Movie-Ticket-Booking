@@ -1,0 +1,12 @@
+/* Minimal stylesheet to avoid 404/MIME errors when using Live Server. */
+/* Tailwind is loaded via CDN in index.html for quick dev, but this file can hold small overrides. */
+html, body, #root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+/* small utility so the page isn't blank if Tailwind isn't loaded */
+.container { padding: 16px; }
