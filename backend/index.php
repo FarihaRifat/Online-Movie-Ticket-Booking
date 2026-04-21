@@ -1,7 +1,8 @@
 <?php
-// ============================================
-// Movie Ticket Booking API - Backend Entry Point
-// ============================================
+// Buffer so UTF-8 BOM / stray bytes in included files cannot break header() calls.
+if (ob_get_level() === 0) {
+    ob_start();
+}
 
 require_once 'backend-config.php';
 
@@ -33,7 +34,6 @@ if ($pathParts[0] === 'api') {
             } elseif ($method === 'POST') {
                 require_once 'backend-createMovie.php';
             } elseif ($method === 'PUT') {
-                // Handle PUT request for updates
                 require_once 'backend-updateMovie.php';
             } elseif ($method === 'DELETE') {
                 require_once 'backend-deleteMovie.php';
@@ -61,4 +61,3 @@ if ($pathParts[0] === 'api') {
     http_response_code(404);
     echo json_encode(['error' => 'API endpoint not found']);
 }
-?>

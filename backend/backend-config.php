@@ -3,40 +3,96 @@
 // Supabase PostgreSQL Configuration
 // ============================================
 
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+if (!headers_sent()) {
+    header("Access-Control-Allow-Origin: *");
+    header("Content-Type: application/json");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
+    header("Access-Control-Allow-Headers: Content-Type");
+}
 
-// Supabase Database Connection Details
-$db_config = [
-    "host" => "db.bxlwxucefflxeiyqeoew.supabase.co",
-    "port" => 5432,
-    "dbname" => "postgres",
-    "user" => "postgres",
-    "password" => "Fariha@8827"
-];
+/**
+ * IPv4 for hostname when local DNS only returns AAAA (Railway has no IPv6 to Supabase).
+ */
+function resolve_ipv4_for_host(string $hostname): ?string
+{
+    $ip = @gethostbyname($hostname);
+    if ($ip !== $hostname && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return $ip;
+    }
 
-// Connect to Supabase PostgreSQL
-// Railway/Docker often has no IPv6 route; libpq may pick AAAA first and fail — prefer IPv4 (DNS A).
-try {
-    $host = $db_config["host"];
-    $port = (int) $db_config["port"];
-    $dbname = $db_config["dbname"];
-
-    $ipv4 = null;
     if (function_exists("dns_get_record")) {
-        $records = @dns_get_record($host, DNS_A);
+        $records = @dns_get_record($hostname, DNS_A);
         if (is_array($records)) {
             foreach ($records as $r) {
-                if (!empty($r["ip"])) {
-                    $ipv4 = $r["ip"];
-                    break;
+                if (!empty($r["ip"]) && filter_var($r["ip"], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                    return $r["ip"];
                 }
             }
         }
     }
 
+    $url = "https://dns.google/resolve?name=" . rawurlencode($hostname) . "&type=A";
+    $ctx = stream_context_create([
+        "http" => [
+            "timeout" => 5,
+            "header" => "Accept: application/dns-json\r\n",
+        ],
+    ]);
+    $json = @file_get_contents($url, false, $ctx);
+    if ($json === false) {
+        return null;
+    }
+    $data = json_decode($json, true);
+    if (!empty($data["Answer"]) && is_array($data["Answer"])) {
+        foreach ($data["Answer"] as $ans) {
+            if (($ans["type"] ?? null) === 1 && !empty($ans["data"])) {
+                $a = trim($ans["data"], '"');
+                if (filter_var($a, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                    return $a;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+$projectRef = "bxlwxucefflxeiyqeoew";
+
+$db_config = [
+    "host" => "db.{$projectRef}.supabase.co",
+    "port" => 5432,
+    "dbname" => "postgres",
+    "user" => "postgres",
+    "password" => "Fariha@8827",
+];
+
+// Paste full URI from Supabase → Connect → Session pooler (IPv4) or Transaction pooler. URL-encode @ in password (e.g. %40).
+$dbUrl = getenv("DATABASE_URL");
+if (is_string($dbUrl) && $dbUrl !== "") {
+    $parts = parse_url($dbUrl);
+    if ($parts !== false && !empty($parts["host"])) {
+        $db_config["host"] = $parts["host"];
+        $db_config["port"] = isset($parts["port"]) ? (int) $parts["port"] : 5432;
+        $db_config["dbname"] = isset($parts["path"]) ? ltrim((string) $parts["path"], "/") : "postgres";
+        $db_config["user"] = isset($parts["user"]) ? rawurldecode((string) $parts["user"]) : $db_config["user"];
+        $db_config["password"] = isset($parts["pass"]) ? rawurldecode((string) $parts["pass"]) : $db_config["password"];
+    }
+} elseif (getenv("RAILWAY_ENVIRONMENT") !== false) {
+    // Direct db.* is "Not IPv4 compatible" per Supabase; Railway is IPv4-only. Use Session pooler (port 5432, user postgres.<ref>).
+    // Set SUPABASE_REGION in Railway to match Supabase → Project Settings → Infrastructure → Region (e.g. ap-south-1, us-east-1).
+    $region = getenv("SUPABASE_REGION") ?: "ap-south-1";
+    $db_config["host"] = "aws-0-{$region}.pooler.supabase.com";
+    $db_config["port"] = 5432;
+    $db_config["user"] = "postgres.{$projectRef}";
+}
+
+try {
+    $host = $db_config["host"];
+    $port = (int) $db_config["port"];
+    $dbname = $db_config["dbname"];
+
+    $ipv4 = resolve_ipv4_for_host($host);
     if ($ipv4 !== null) {
         $dsn = "pgsql:hostaddr={$ipv4};host={$host};port={$port};dbname={$dbname};sslmode=require";
     } else {
@@ -49,7 +105,7 @@ try {
         $db_config["password"],
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]
     );
 
@@ -60,11 +116,10 @@ try {
     die(json_encode([
         "success" => false,
         "error" => "Database connection failed",
-        "message" => $e->getMessage()
+        "message" => $e->getMessage(),
     ]));
 }
 
-// Set default schema and enable extensions
 try {
     $conn->exec("SET search_path = public");
 
