@@ -5,6 +5,7 @@ import ReceiptPage from './components/ReceiptPage.jsx';
 import MovieManagement from './components/MovieManagement.jsx';
 import { SeatStatus } from './types.js';
 import { FALLBACK_MOVIES } from './constants.js';
+import { API_ENDPOINTS } from './apiConfig.js';
 
 const App = () => {
   const [view, setView] = useState('home');
@@ -32,10 +33,10 @@ const App = () => {
   };
 
   const fetchMovies = () => {
-    fetch("http://localhost/cinematic-ticket-booker-backend/getMovies.php")
+    fetch(API_ENDPOINTS.getMovies)
       .then(res => res.json())
       .then(data => {
-        if (data.status === "success" && Array.isArray(data.data)) {
+        if ((data.success || data.status === "success") && Array.isArray(data.data)) {
           const mappedMovies = data.data.map(m => ({
             id: parseInt(m.id),
             title: m.title || "Untitled Movie",
@@ -66,17 +67,17 @@ const App = () => {
 
   const handleAddMovie = async (movieData) => {
     try {
-      const response = await fetch("http://localhost/cinematic-ticket-booker-backend/createMovie.php", {
+      const response = await fetch(API_ENDPOINTS.createMovie, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(movieData)
       });
 
       const data = await response.json();
-      if (data.status === "success") {
+      if (data.success || data.status === "success") {
         fetchMovies(); // Refresh movie list
       } else {
-        alert(`Failed to add movie: ${data.message}`);
+        alert(`Failed to add movie: ${data.error || data.message}`);
       }
     } catch (error) {
       console.error("Error adding movie:", error);
@@ -86,7 +87,7 @@ const App = () => {
 
   const handleEditMovie = async (movieId, movieData) => {
     try {
-      const response = await fetch("http://localhost/cinematic-ticket-booker-backend/updateMovie.php", {
+      const response = await fetch(API_ENDPOINTS.updateMovie, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -96,12 +97,12 @@ const App = () => {
       });
 
       const data = await response.json();
-      if (data.status === "success") {
+      if (data.success || data.status === "success") {
         await fetchMovies(); // Refresh movie list
         return { success: true };
       } else {
-        alert(`Failed to update movie: ${data.message}`);
-        return { success: false, error: data.message };
+        alert(`Failed to update movie: ${data.error || data.message}`);
+        return { success: false, error: data.error || data.message };
       }
     } catch (error) {
       console.error("Error updating movie:", error);
@@ -112,17 +113,17 @@ const App = () => {
 
   const handleDeleteMovie = async (movieId) => {
     try {
-      const response = await fetch("http://localhost/cinematic-ticket-booker-backend/deleteMovie.php", {
+      const response = await fetch(API_ENDPOINTS.deleteMovie, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: movieId })
       });
 
       const data = await response.json();
-      if (data.status === "success") {
+      if (data.success || data.status === "success") {
         fetchMovies(); // Refresh movie list
       } else {
-        alert(`Failed to delete movie: ${data.message}`);
+        alert(`Failed to delete movie: ${data.error || data.message}`);
       }
     } catch (error) {
       console.error("Error deleting movie:", error);
@@ -133,7 +134,7 @@ const App = () => {
   // Confirm booking and then show receipt
   const handleConfirmBooking = async (details) => {
     try {
-      const response = await fetch("http://localhost/cinematic-ticket-booker-backend/bookSeats.php", {
+      const response = await fetch(API_ENDPOINTS.bookSeats, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

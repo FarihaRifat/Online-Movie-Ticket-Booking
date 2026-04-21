@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FilmIcon } from './icons.jsx';
+import { API_ENDPOINTS } from '../apiConfig.js';
 
 const MovieManagement = ({ movies, onMoviesUpdate, onGoBack }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -50,7 +51,7 @@ const MovieManagement = ({ movies, onMoviesUpdate, onGoBack }) => {
     try {
       if (editingId) {
         // Update existing movie
-        const response = await fetch("http://localhost/cinematic-ticket-booker-backend/updateMovie.php", {
+        const response = await fetch(API_ENDPOINTS.updateMovie, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -61,16 +62,16 @@ const MovieManagement = ({ movies, onMoviesUpdate, onGoBack }) => {
         });
 
         const data = await response.json();
-        if (data.status === "success") {
+        if (data.success || data.status === "success") {
           setMessage({ type: "success", text: "Movie updated successfully!" });
           resetForm();
           onMoviesUpdate();
         } else {
-          setMessage({ type: "error", text: data.message || "Failed to update movie" });
+          setMessage({ type: "error", text: data.error || data.message || "Failed to update movie" });
         }
       } else {
         // Create new movie
-        const response = await fetch("http://localhost/cinematic-ticket-booker-backend/createMovie.php", {
+        const response = await fetch(API_ENDPOINTS.createMovie, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -80,12 +81,12 @@ const MovieManagement = ({ movies, onMoviesUpdate, onGoBack }) => {
         });
 
         const data = await response.json();
-        if (data.status === "success") {
+        if (data.success || data.status === "success") {
           setMessage({ type: "success", text: "Movie added successfully!" });
           resetForm();
           onMoviesUpdate();
         } else {
-          setMessage({ type: "error", text: data.message || "Failed to add movie" });
+          setMessage({ type: "error", text: data.error || data.message || "Failed to add movie" });
         }
       }
     } catch (error) {
@@ -104,18 +105,18 @@ const MovieManagement = ({ movies, onMoviesUpdate, onGoBack }) => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await fetch("http://localhost/cinematic-ticket-booker-backend/deleteMovie.php", {
+      const response = await fetch(API_ENDPOINTS.deleteMovie, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id })
       });
 
       const data = await response.json();
-      if (data.status === "success") {
+      if (data.success || data.status === "success") {
         setMessage({ type: "success", text: "Movie deleted successfully!" });
         onMoviesUpdate();
       } else {
-        setMessage({ type: "error", text: data.message || "Failed to delete movie" });
+        setMessage({ type: "error", text: data.error || data.message || "Failed to delete movie" });
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error: " + error.message });
