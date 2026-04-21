@@ -79,17 +79,18 @@ if (is_string($dbUrl) && $dbUrl !== "") {
         $db_config["password"] = isset($parts["pass"]) ? rawurldecode((string) $parts["pass"]) : $db_config["password"];
     }
 } elseif (getenv("RAILWAY_ENVIRONMENT") !== false) {
-    // Railway: use Session pooler (IPv4). Copy exact host from Supabase → Connect → Session pooler (may be aws-0- or aws-1-).
+    // Supavisor transaction mode (IPv4): same host as direct, port 6543, user "postgres" — see Supabase docs (not session pooler aws-0-*).
+    // Optional override: SUPABASE_POOLER_HOST + SUPABASE_POOLER_PORT + set user via DATABASE_URL if nonstandard.
     $poolerHost = getenv("SUPABASE_POOLER_HOST");
     if (is_string($poolerHost) && $poolerHost !== "") {
         $db_config["host"] = $poolerHost;
-        $db_config["port"] = (int) (getenv("SUPABASE_POOLER_PORT") ?: 5432);
+        $db_config["port"] = (int) (getenv("SUPABASE_POOLER_PORT") ?: 6543);
+        $db_config["user"] = getenv("SUPABASE_POOLER_USER") ?: "postgres";
     } else {
-        $region = getenv("SUPABASE_REGION") ?: "ap-south-1";
-        $db_config["host"] = "aws-0-{$region}.pooler.supabase.com";
-        $db_config["port"] = 5432;
+        $db_config["host"] = "db.{$projectRef}.supabase.co";
+        $db_config["port"] = 6543;
+        $db_config["user"] = "postgres";
     }
-    $db_config["user"] = "postgres.{$projectRef}";
 }
 
 try {
@@ -97,9 +98,10 @@ try {
     $port = (int) $db_config["port"];
     $dbname = $db_config["dbname"];
 
-    // Do not use hostaddr for *.pooler.supabase.com — IP-only routing breaks pooler tenant resolution ("Tenant or user not found").
-    $isSupabasePooler = str_contains($host, "pooler.supabase.com");
-    $ipv4 = $isSupabasePooler ? null : resolve_ipv4_for_host($host);
+    // Do not force hostaddr for Supabase pooler / transaction port — breaks tenant routing on shared pooler.
+    $skipHostaddr = str_contains($host, "pooler.supabase.com")
+        || (str_contains($host, ".supabase.co") && $port === 6543);
+    $ipv4 = $skipHostaddr ? null : resolve_ipv4_for_host($host);
     if ($ipv4 !== null) {
         $dsn = "pgsql:hostaddr={$ipv4};host={$host};port={$port};dbname={$dbname};sslmode=require";
     } else {
