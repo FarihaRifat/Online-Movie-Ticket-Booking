@@ -2,34 +2,26 @@ import React, { useState } from 'react';
 import MovieForm from './MovieForm.jsx';
 
 const MovieCard = ({ movie, onBookNow, onEdit, onDelete }) => {
-  // All hooks must be declared at the top, before any conditional returns
   const [showEditForm, setShowEditForm] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Safety check for movie object
   if (!movie) {
     return <div className="bg-gray-800 rounded-lg p-4">No movie data available</div>;
   }
 
   const handleEdit = async (updatedData) => {
-    console.log('handleEdit called with data:', updatedData);
     if (!movie || !movie.id) {
       alert('Invalid movie data. Cannot edit.');
       return;
     }
     try {
       const result = await onEdit(movie.id, updatedData);
-      console.log('Edit result:', result);
       if (result && result.success) {
         setShowEditForm(false);
-      } else {
-        // Error message already shown in handleEditMovie
-        // Keep form open so user can try again
       }
     } catch (error) {
       console.error('Error updating movie:', error);
       alert('Failed to update movie. Please check the console for details.');
-      // Keep form open if there's an error
     }
   };
 
@@ -44,16 +36,12 @@ const MovieCard = ({ movie, onBookNow, onEdit, onDelete }) => {
   };
 
   if (showEditForm) {
-    console.log('Showing edit form for movie:', movie.id, movie.title);
     return (
       <div className="bg-gray-800 rounded-lg p-4 border-2 border-indigo-500 shadow-xl">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-white">Edit Movie: {movie?.title || 'Untitled'}</h3>
           <button
-            onClick={() => {
-              console.log('Cancel edit clicked');
-              setShowEditForm(false);
-            }}
+            onClick={() => setShowEditForm(false)}
             className="text-gray-400 hover:text-white text-xl cursor-pointer"
             title="Close"
             type="button"
@@ -65,10 +53,7 @@ const MovieCard = ({ movie, onBookNow, onEdit, onDelete }) => {
           key={movie.id} 
           movie={movie} 
           onSubmit={handleEdit} 
-          onCancel={() => {
-            console.log('Form cancel clicked');
-            setShowEditForm(false);
-          }} 
+          onCancel={() => setShowEditForm(false)} 
         />
       </div>
     );
@@ -90,14 +75,12 @@ const MovieCard = ({ movie, onBookNow, onEdit, onDelete }) => {
             {movie?.title || 'Untitled Movie'}
           </h3>
         </div>
-        {/* Edit and Delete buttons */}
         {onEdit && onDelete && (
           <div className="absolute top-2 right-2 flex gap-2 z-20">
             <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Edit button clicked for movie:', movie.id, movie.title);
                 setShowEditForm(true);
               }}
               className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 active:bg-blue-700 transition-colors shadow-lg cursor-pointer z-20"

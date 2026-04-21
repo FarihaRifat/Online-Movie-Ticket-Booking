@@ -8,7 +8,6 @@ const MovieForm = ({ movie = null, onSubmit, onCancel }) => {
     price: movie?.price || 0,
   });
 
-  // Update form data when movie prop changes
   useEffect(() => {
     if (movie && movie.id) {
       setFormData({
@@ -25,7 +24,6 @@ const MovieForm = ({ movie = null, onSubmit, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     try {
-      // Trim and validate all fields before submission
       const submitData = {
         title: (formData.title || '').trim(),
         description: (formData.description || '').trim(),
@@ -33,7 +31,6 @@ const MovieForm = ({ movie = null, onSubmit, onCancel }) => {
         price: parseFloat(formData.price) || 0,
       };
       
-      // Validate required fields
       if (!submitData.title) {
         alert('Title is required');
         return;
@@ -47,7 +44,6 @@ const MovieForm = ({ movie = null, onSubmit, onCancel }) => {
         return;
       }
       
-      // Validate that price is positive
       if (submitData.price < 0) {
         alert('Price must be a positive number');
         return;
@@ -107,7 +103,6 @@ const MovieForm = ({ movie = null, onSubmit, onCancel }) => {
           value={formData.price}
           onChange={(e) => {
             const value = e.target.value;
-            // Store as number, but allow empty during typing
             const numValue = value === '' ? 0 : parseFloat(value);
             setFormData({ ...formData, price: isNaN(numValue) ? 0 : numValue });
           }}
@@ -134,4 +129,3 @@ const MovieForm = ({ movie = null, onSubmit, onCancel }) => {
 };
 
 export default MovieForm;
-

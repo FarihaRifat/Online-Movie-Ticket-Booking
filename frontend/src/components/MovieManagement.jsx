@@ -50,7 +50,6 @@ const MovieManagement = ({ movies, onMoviesUpdate, onGoBack }) => {
 
     try {
       if (editingId) {
-        // Update existing movie
         const response = await fetch(API_ENDPOINTS.updateMovie, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,7 +69,6 @@ const MovieManagement = ({ movies, onMoviesUpdate, onGoBack }) => {
           setMessage({ type: "error", text: data.error || data.message || "Failed to update movie" });
         }
       } else {
-        // Create new movie
         const response = await fetch(API_ENDPOINTS.createMovie, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

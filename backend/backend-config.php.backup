@@ -1,0 +1,61 @@
+<?php
+// ============================================
+// Enable CORS for frontend requests
+// ============================================
+header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// SQLite Database Configuration
+$db_file = __DIR__ . '/../database/ticket_booking.db';
+
+// Create database directory if it doesn't exist
+$db_dir = dirname($db_file);
+if (!is_dir($db_dir)) {
+    mkdir($db_dir, 0755, true);
+}
+
+// Connect to SQLite Database
+try {
+    $conn = new PDO("sqlite:" . $db_file);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Create tables if they don't exist
+    $conn->exec("
+        CREATE TABLE IF NOT EXISTS movies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            posterUrl TEXT NOT NULL,
+            price REAL DEFAULT 0.00,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
+    
+    $conn->exec("
+        CREATE TABLE IF NOT EXISTS showtimes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            movie_id INTEGER NOT NULL,
+            time TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE
+        )
+    ");
+    
+    $conn->exec("
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            movie_id INTEGER NOT NULL,
+            showtime DATETIME NOT NULL,
+            seats TEXT NOT NULL,
+            total_amount REAL NOT NULL,
+            contact_number TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE
+        )
+    ");
+    
+} catch (PDOException $e) {
+    die(json_encode(["error" => "Connection failed to SQLite database: " . $e->getMessage()]));
+}

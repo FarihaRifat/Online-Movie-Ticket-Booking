@@ -13,7 +13,7 @@ const App = () => {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [bookingDetails, setBookingDetails] = useState(null);
 
-  const DEFAULT_SHOWTIMES = ["12:00 PM", "04:00 PM", "08:00 PM"]; // Bangladesh Time (UTC+6)
+  const DEFAULT_SHOWTIMES = ["12:00 PM", "04:00 PM", "08:00 PM"];
 
   const generateSeats = (rows = 8, cols = 12) => {
     const seats = [];
@@ -75,7 +75,7 @@ const App = () => {
 
       const data = await response.json();
       if (data.success || data.status === "success") {
-        fetchMovies(); // Refresh movie list
+        fetchMovies();
       } else {
         alert(`Failed to add movie: ${data.error || data.message}`);
       }
@@ -98,7 +98,7 @@ const App = () => {
 
       const data = await response.json();
       if (data.success || data.status === "success") {
-        await fetchMovies(); // Refresh movie list
+        await fetchMovies();
         return { success: true };
       } else {
         alert(`Failed to update movie: ${data.error || data.message}`);
@@ -121,7 +121,7 @@ const App = () => {
 
       const data = await response.json();
       if (data.success || data.status === "success") {
-        fetchMovies(); // Refresh movie list
+        fetchMovies();
       } else {
         alert(`Failed to delete movie: ${data.error || data.message}`);
       }
@@ -131,43 +131,27 @@ const App = () => {
     }
   };
 
-  // Confirm booking and then show receipt
   const handleConfirmBooking = async (details) => {
     try {
       const response = await fetch(API_ENDPOINTS.bookSeats, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          movieId: details.movieId,
+          movie_id: details.movieId,
           showtime: details.showtime,
-          seats: details.seats,
-          totalAmount: details.totalAmount,
-          contactNumber: details.contactNumber,
+          seats: Array.isArray(details.seats) ? details.seats.join(',') : details.seats,
+          total_amount: details.totalAmount,
+          contact_number: details.contactNumber,
         }),
       });
 
       const data = await response.json();
 
-      if (data.status === "success") {
-        console.log("Booking successful:", data);
-
-        // Save booking details for ReceiptPage
-       setBookingDetails({
-  bookingId: data.bookingId,
-  movieTitle: details.movieTitle,
-  posterUrl: details.posterUrl,
-  showtime: details.showtime,
-  seats: details.seats,
-  totalAmount: details.totalAmount,
-  contactNumber: details.contactNumber,
-});
-
-
-        // Switch view to receipt
-        setView("receipt");
+      if (data.success || data.status === "success") {
+        setBookingDetails(details);
+        setView('receipt');
       } else {
-        console.error("Booking failed:", data.message);
-        alert(`Booking failed: ${data.message}`);
+        alert(`Booking failed: ${data.error || data.message}`);
       }
     } catch (error) {
       console.error("Error booking seats:", error);
@@ -175,62 +159,81 @@ const App = () => {
     }
   };
 
-  const handleGoHome = () => {
-    setSelectedMovie(null);
-    setBookingDetails(null);
-    setView('home');
-  };
-
   const renderView = () => {
     switch (view) {
+      case 'home':
+        return (
+          <HomePage
+            movies={movies}
+            onSelectMovie={handleSelectMovie}
+            onAddMovie={handleAddMovie}
+            onEditMovie={handleEditMovie}
+            onDeleteMovie={handleDeleteMovie}
+          />
+        );
       case 'booking':
-        return selectedMovie && (
+        return (
           <BookingPage
             movie={selectedMovie}
             onConfirmBooking={handleConfirmBooking}
-            onGoBack={handleGoHome}
+            onGoBack={() => setView('home')}
           />
         );
       case 'receipt':
-        return bookingDetails && (
-          <ReceiptPage bookingDetails={bookingDetails} onGoHome={handleGoHome} />
+        return (
+          <ReceiptPage
+            bookingDetails={bookingDetails}
+            onGoHome={() => {
+              setView('home');
+              setSelectedMovie(null);
+              setBookingDetails(null);
+            }}
+          />
         );
       case 'management':
         return (
-          <MovieManagement 
-            movies={movies} 
+          <MovieManagement
+            movies={movies}
             onMoviesUpdate={fetchMovies}
-            onGoBack={handleGoHome}
+            onGoBack={() => setView('home')}
           />
         );
       default:
-        return movies.length === 0
-          ? <p className="text-center mt-10">Loading movies...</p>
-          : (
-            <>
-              <div className="container mx-auto px-4 pt-4 flex justify-end">
-                <button
-                  onClick={() => setView('management')}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors"
-                >
-                  Manage Movies
-                </button>
-              </div>
-              <HomePage 
-                movies={movies} 
-                onSelectMovie={handleSelectMovie}
-                onAddMovie={handleAddMovie}
-                onEditMovie={handleEditMovie}
-                onDeleteMovie={handleDeleteMovie}
-              />
-            </>
-          );
+        return <HomePage movies={movies} onSelectMovie={handleSelectMovie} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-slate-800 text-gray-100 font-sans">
-      <main>{renderView()}</main>
+    <div className="min-h-screen bg-gray-900 text-white">
+      <nav className="bg-gray-800 border-b border-gray-700">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <button
+            onClick={() => setView('home')}
+            className="text-xl font-bold text-indigo-400 hover:text-indigo-300"
+          >
+            Online Movie Ticket Booking
+          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setView('home')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                view === 'home' ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              Home
+            </button>
+            <button
+              onClick={() => setView('management')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                view === 'management' ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              Manage Movies
+            </button>
+          </div>
+        </div>
+      </nav>
+      {renderView()}
     </div>
   );
 };

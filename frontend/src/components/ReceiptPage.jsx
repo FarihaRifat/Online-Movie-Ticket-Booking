@@ -23,18 +23,15 @@ const ReceiptPage = ({ bookingDetails, onGoHome }) => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-2xl p-8 relative overflow-hidden">
-        {/* Decorative background circles */}
         <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/20 rounded-full"></div>
         <div className="absolute -bottom-16 -left-12 w-40 h-40 bg-purple-500/20 rounded-full"></div>
         
-        {/* Header */}
         <div className="text-center mb-8 relative z-10">
           <CheckCircleIcon className="w-16 h-16 text-green-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white">Booking Confirmed!</h1>
           <p className="text-gray-400">Thank you for your purchase.</p>
         </div>
 
-        {/* Booking summary */}
         <div className="bg-gray-900/50 p-6 rounded-lg mb-8 relative z-10">
           <div className="flex items-center mb-6">
             <img
@@ -44,7 +41,6 @@ const ReceiptPage = ({ bookingDetails, onGoHome }) => {
             />
             <div>
               <h2 className="text-xl font-bold text-white">{bookingDetails.movieTitle}</h2>
-              {/* Use totalAmount instead of totalPrice */}
               <p className="text-lg font-semibold text-indigo-400">
                 ${bookingDetails.totalAmount.toFixed(2)}
               </p>
@@ -60,7 +56,6 @@ const ReceiptPage = ({ bookingDetails, onGoHome }) => {
           </div>
         </div>
 
-        {/* Action button */}
         <button
           onClick={onGoHome}
           className="w-full bg-indigo-600 text-white py-3 px-4 rounded-md font-semibold transition-colors duration-300 hover:bg-indigo-500 flex items-center justify-center gap-2 relative z-10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500"

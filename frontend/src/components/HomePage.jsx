@@ -28,7 +28,7 @@ const HomePage = ({ movies, onSelectMovie, onAddMovie, onEditMovie, onDeleteMovi
         <div className="flex justify-center items-center gap-4">
             <FilmIcon className="w-12 h-12 text-indigo-400" />
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
-                Amiyo Movie Theater 
+                Online Movie Ticket Booking 
             </h1>
         </div>
         <p className="mt-4 text-lg text-gray-400">Now Showing</p>

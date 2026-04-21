@@ -81,7 +81,7 @@ const BookingPage = ({ movie, onConfirmBooking, onGoBack }) => {
     }
     setError('');
 const bookingDetails = {
-  movieId: movie.id,   // add this
+  movieId: movie.id,
   movieTitle: movie.title,
   posterUrl: movie.posterUrl,
   showtime: activeShowtime.time,
