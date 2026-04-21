@@ -19,7 +19,7 @@ $db_config = [
 
 // Connect to Supabase PostgreSQL
 try {
-    $dsn = "pgsql:host={$db_config['host']};port={$db_config['port']};dbname={$db_config['dbname']}";
+    $dsn = "pgsql:host={$db_config['host']};port={$db_config['port']};dbname={$db_config['dbname']};sslmode=require";
     
     $conn = new PDO(
         $dsn,
