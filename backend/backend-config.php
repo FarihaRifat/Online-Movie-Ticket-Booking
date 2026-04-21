@@ -18,22 +18,43 @@ $db_config = [
 ];
 
 // Connect to Supabase PostgreSQL
+// Railway/Docker often has no IPv6 route; libpq may pick AAAA first and fail — prefer IPv4 (DNS A).
 try {
-    $dsn = "pgsql:host={$db_config['host']};port={$db_config['port']};dbname={$db_config['dbname']};sslmode=require";
-    
+    $host = $db_config["host"];
+    $port = (int) $db_config["port"];
+    $dbname = $db_config["dbname"];
+
+    $ipv4 = null;
+    if (function_exists("dns_get_record")) {
+        $records = @dns_get_record($host, DNS_A);
+        if (is_array($records)) {
+            foreach ($records as $r) {
+                if (!empty($r["ip"])) {
+                    $ipv4 = $r["ip"];
+                    break;
+                }
+            }
+        }
+    }
+
+    if ($ipv4 !== null) {
+        $dsn = "pgsql:hostaddr={$ipv4};host={$host};port={$port};dbname={$dbname};sslmode=require";
+    } else {
+        $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};sslmode=require";
+    }
+
     $conn = new PDO(
         $dsn,
-        $db_config['user'],
-        $db_config['password'],
+        $db_config["user"],
+        $db_config["password"],
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
         ]
     );
-    
-    // Set SSL mode
+
     $conn->setAttribute(PDO::ATTR_TIMEOUT, 10);
-    
+
 } catch (PDOException $e) {
     http_response_code(500);
     die(json_encode([
@@ -46,8 +67,7 @@ try {
 // Set default schema and enable extensions
 try {
     $conn->exec("SET search_path = public");
-    
-    // Create required tables if they don'\''t exist
+
     $conn->exec("
         CREATE TABLE IF NOT EXISTS movies (
             id SERIAL PRIMARY KEY,
@@ -58,7 +78,7 @@ try {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ");
-    
+
     $conn->exec("
         CREATE TABLE IF NOT EXISTS times (
             id SERIAL PRIMARY KEY,
@@ -68,7 +88,7 @@ try {
             FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
         )
     ");
-    
+
     $conn->exec("
         CREATE TABLE IF NOT EXISTS bookings (
             id SERIAL PRIMARY KEY,
@@ -81,14 +101,10 @@ try {
             FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
         )
     ");
-    
-    // Create indexes if they don'\''t exist
+
     $conn->exec("CREATE INDEX IF NOT EXISTS idx_times_movie_id ON times(movie_id)");
     $conn->exec("CREATE INDEX IF NOT EXISTS idx_bookings_movie_id ON bookings(movie_id)");
-    
+
 } catch (PDOException $e) {
     error_log("Table creation error: " . $e->getMessage());
-    // Continue - tables might already exist
 }
-
-?>
