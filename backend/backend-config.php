@@ -23,7 +23,7 @@ function respond_db_not_configured(): void
     echo json_encode([
         "success" => false,
         "error" => "database_not_configured",
-        "message" => "Railway: add variable DATABASE_URL (Supabase → Connect → Session pooler URI). If your password contains @, use %40 instead of @. Alternative: SUPABASE_POOLER_HOST + SUPABASE_DB_PASSWORD (+ optional SUPABASE_DB_USER).",
+        "message" => "Railway: set DATABASE_URL (Session pooler URI only; encode @ in password as %40) OR set SUPABASE_POOLER_HOST + SUPABASE_DB_PASSWORD (+ SUPABASE_DB_USER postgres.your_ref). Do not use Direct db.* host on Railway (IPv6).",
     ]);
     exit;
 }

@@ -6,44 +6,82 @@
 2. **SQL Editor** → run the full script from `SUPABASE_SETUP.sql`.
 3. Confirm tables: `movies`, `bookings` (and `times` if used).
 
-## 2. Railway (backend)
+---
 
-1. **New Project** → **Deploy from GitHub** → select this repo.
-2. **Root directory**: leave empty (uses repo root `Dockerfile`).
-3. **Variables** — add **one** of the following (required for the API to start):
+## 2. Why “Direct” fails on Railway
 
-### Option A (recommended)
+Supabase **Direct** (`db.<project>.supabase.co`, port **5432**, user `postgres`) is **not IPv4 compatible** for many hosts. Railway reaches the database over **IPv4**, so you get **network unreachable** or IPv6 errors.
 
-`DATABASE_URL` = copy **Session pooler** URI from Supabase **Connect** (not “Direct” — Direct is IPv6-only and fails on Railway).
+**Use Session pooler instead** (Supabase → **Connect** → choose **Session pooler**, not “Direct”).
 
-- If your DB password contains `@`, replace it with **`%40`** in the URL.
+---
 
-### Option B
+## 3. Railway (backend) — variables
 
-- `SUPABASE_POOLER_HOST` — pooler hostname from the same Session pooler screen (e.g. `aws-0-REGION.pooler.supabase.com`).
-- `SUPABASE_DB_PASSWORD` — database password.
-- Optional: `SUPABASE_POOLER_PORT` (default `5432`), `SUPABASE_DB_USER` (default `postgres.YOUR_PROJECT_REF`), `SUPABASE_PROJECT_REF`, `SUPABASE_DB_NAME`.
+1. **New Project** → **Deploy from GitHub** → this repo.
+2. **Root directory**: empty (uses root `Dockerfile`).
+3. Add variables using **Option A** *or* **Option B** below.
 
-4. Deploy. **Health check:** `GET /api/health` (no database).
+### Option B (best if your password contains `@` or `#`)
 
-5. Test: `https://YOUR-RAILWAY-URL.up.railway.app/api/movies` → should return `"success": true` and a `data` array.
+No URL encoding. Copy values from Supabase **Connect → Session pooler** (host, user, port).
 
-## 3. Netlify (frontend)
+| Variable | Example | Notes |
+|----------|---------|--------|
+| `SUPABASE_POOLER_HOST` | `aws-0-ap-south-1.pooler.supabase.com` | Copy **exactly** from Supabase (region may differ: `aws-0-`, `aws-1-`, etc.). |
+| `SUPABASE_DB_PASSWORD` | *(your database password)* | Plain text in Railway is fine; special characters OK. |
+| `SUPABASE_DB_USER` | `postgres.bxlwxucefflxeiyqeoew` | Format `postgres.<project-ref>` from Session pooler screen. |
+| `SUPABASE_POOLER_PORT` | `5432` | Default if omitted. |
+| `SUPABASE_DB_NAME` | `postgres` | Default if omitted. |
 
-1. Connect repo; **Base directory** `frontend`, build `npm run build`, publish `dist`.
-2. If the Railway URL changes, set build variable **`VITE_API_BASE_URL`** to your Railway base (no trailing slash), then redeploy the site.
+Do **not** use the Direct host `db....supabase.co` here — use the **pooler** hostname from the Session pooler tab.
 
-## 4. Verify
+### Option A (`DATABASE_URL`)
 
-- [ ] `/api/health` returns `{"ok":true,...}`
-- [ ] `/api/movies` lists movies
-- [ ] Booking creates a row in Supabase `bookings`
+Copy the **Session pooler** URI from Supabase (not Direct).
+
+- If you put the URI in Railway, the password must be **URL-encoded** in that single string: **`@` → `%40`**, **`#` → `%23`**, etc.
+
+**Wrong (broken parsing because of `@` in password):**
+
+```text
+postgresql://postgres:MyPass@word@db.xxx.supabase.co:5432/postgres
+```
+
+**Right (password `MyPass@word` encoded):**
+
+```text
+postgresql://postgres:MyPass%40word@aws-0-REGION.pooler.supabase.com:5432/postgres
+```
+
+Use the **pooler host** from the Session pooler UI, not `db.xxx.supabase.co`, unless Supabase’s copied URI still shows it for session mode (follow what the dashboard copies).
+
+4. **Health check:** `GET /api/health` (no database).
+5. Test: `https://YOUR-SERVICE.up.railway.app/api/movies` → `"success": true` and `data` array.
+
+---
+
+## 4. Netlify (frontend)
+
+- Base directory **`frontend`**, build `npm run build`, publish **`dist`**.
+- Optional: **`VITE_API_BASE_URL`** = your Railway URL (no trailing slash) if it is not the default in `apiConfig.js`.
+
+---
+
+## 5. Verify
+
+- [ ] `GET /api/health` → `{"ok":true,...}`
+- [ ] `GET /api/movies` → lists movies
+- [ ] Booking inserts a row in Supabase `bookings`
+
+---
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |--------|-----|
-| `database_not_configured` | Set `DATABASE_URL` or pooler host + password variables. |
-| IPv6 / network unreachable | Use **Session pooler** URI, not Direct `db.*:5432`. |
-| `Tenant or user not found` | Wrong pooler host/region — copy host exactly from Supabase Connect. |
-| Update/delete movie fails | Backend routes `POST /api/movies/update` and `POST /api/movies/delete` (fixed in router). |
+| `database_not_configured` | Set `DATABASE_URL` **or** `SUPABASE_POOLER_HOST` + `SUPABASE_DB_PASSWORD`. |
+| `@` in password breaks `DATABASE_URL` | Use **Option B** (separate password variable), **or** encode `@` as `%40` in the URI. |
+| IPv6 / network unreachable | You used **Direct** `db.*:5432` — switch to **Session pooler** host + port `5432`. |
+| `Tenant or user not found` | Wrong pooler host/region — copy host from Session pooler exactly; set `SUPABASE_DB_USER` to `postgres.<ref>` from that screen. |
+| Update/delete movie fails | Use `POST /api/movies/update` and `POST /api/movies/delete` (router supports these). |
