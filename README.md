@@ -3,16 +3,8 @@
 ## Group Information
 
 - **Course:** DBMS Project
-- **Group Number:** -
 - **Project Name:** Online Movie Ticket Booking System
 
-### Group Members
-
-| Name | ID | Section | Role |
-|------|----|---------|------|
-| Member 1 | - | - | Frontend + Integration |
-| Member 2 | - | - | Backend API |
-| Member 3 | - | - | Database + Testing |
 
 ## Individual Contribution
 
