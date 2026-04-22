@@ -41,7 +41,8 @@ const App = () => {
             id: parseInt(m.id),
             title: m.title || "Untitled Movie",
             description: m.description || "No description available.",
-            posterUrl: (m.posterUrl || "https://via.placeholder.com/500x750?text=No+Image").trim(),
+            // Back-compat: older API responses used `posterurl` (lowercased by Postgres).
+            posterUrl: ((m.posterUrl ?? m.posterurl) || "https://via.placeholder.com/500x750?text=No+Image").trim(),
             price: m.price ? parseFloat(m.price) : 12.50,
             showtimes: DEFAULT_SHOWTIMES.map(time => ({
               time,

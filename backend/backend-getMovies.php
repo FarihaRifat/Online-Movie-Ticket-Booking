@@ -1,11 +1,12 @@
-<?php
+﻿<?php
 // ============================================
 // GET MOVIES API - Supabase PostgreSQL
 // ============================================
 require_once "backend-config.php";
 
 try {
-    $query = "SELECT id, title, description, poster_url as posterUrl, price, created_at FROM movies ORDER BY created_at DESC";
+    // In Postgres, unquoted aliases are folded to lowercase; quote to preserve camelCase for frontend.
+    $query = "SELECT id, title, description, poster_url AS \"posterUrl\", price, created_at FROM movies ORDER BY created_at DESC";
     $stmt = $conn->prepare($query);
     $stmt->execute();
     

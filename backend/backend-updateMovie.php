@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // ============================================
 // UPDATE MOVIE API - Supabase PostgreSQL
 // ============================================
@@ -47,7 +47,7 @@ try {
         throw new Exception("No fields to update");
     }
 
-    $query = "UPDATE movies SET " . implode(", ", $updates) . " WHERE id = :id RETURNING id, title, description, poster_url as posterUrl, price, created_at";
+    $query = "UPDATE movies SET " . implode(", ", $updates) . " WHERE id = :id RETURNING id, title, description, poster_url AS \"posterUrl\", price, created_at";
     
     $stmt = $conn->prepare($query);
     $stmt->execute($params);

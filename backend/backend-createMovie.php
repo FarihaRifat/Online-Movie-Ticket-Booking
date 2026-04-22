@@ -18,7 +18,7 @@ try {
 
     $query = "INSERT INTO movies (title, description, poster_url, price) 
               VALUES (:title, :description, :poster_url, :price)
-              RETURNING id, title, description, poster_url as posterUrl, price, created_at";
+              RETURNING id, title, description, poster_url AS \"posterUrl\", price, created_at";
     
     $stmt = $conn->prepare($query);
     $stmt->execute([
