@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Supabase PostgreSQL — production config is environment variables only (Railway).
  *

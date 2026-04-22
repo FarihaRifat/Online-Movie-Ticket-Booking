@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Optional CLI test: DATABASE_URL must be set (same as Railway).
 $url = getenv("DATABASE_URL");
 if (!$url) {
