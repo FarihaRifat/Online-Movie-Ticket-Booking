@@ -86,8 +86,7 @@ Your app is now configured for Supabase PostgreSQL deployment! Follow these step
 
 2. **Setup Backend**
    ```bash
-   # Configure your database in backend/backend-config.php
-   # For local development, you can use SQLite or PostgreSQL
+   # Set DATABASE_URL or pooler variables (see DEPLOYMENT_README.md)
    ```
 
 3. **Setup Frontend**
@@ -109,21 +108,11 @@ Your app is now configured for Supabase PostgreSQL deployment! Follow these step
 
 ## 🔧 Configuration
 
-### Database Configuration
-Update `backend/backend-config.php` with your database credentials:
+### Database configuration (production)
+Use **Railway variables**: `DATABASE_URL` (Supabase **Session pooler** URI) or `SUPABASE_POOLER_HOST` + `SUPABASE_DB_PASSWORD`. See **`DEPLOYMENT_README.md`**.
 
-```php
-$db_config = [
-    "host" => "your-supabase-host",
-    "port" => 5432,
-    "dbname" => "postgres",
-    "user" => "postgres",
-    "password" => "your-password"
-];
-```
-
-### API Endpoints
-Update `frontend/src/apiConfig.js` with your backend URLs for production deployment.
+### API base URL (frontend)
+Set **`VITE_API_BASE_URL`** at Netlify build time if your Railway URL changes; otherwise the default in `apiConfig.js` is used.
 
 ## Prerequisites
 
@@ -155,9 +144,9 @@ cd ..
    - Create a PostgreSQL database (or use Supabase)
    - Import the `database-supabase.sql` file to create tables
 
-2. **Backend Configuration:**
-   - Update database credentials in `backend/backend-config.php`
-   - Ensure PHP server can serve the backend directory
+2. **Backend configuration:**
+   - Set Railway / server environment variables per **`DEPLOYMENT_README.md`**
+   - Ensure PHP 8.2+ with `pdo_pgsql` (included in the repo `Dockerfile` for Railway)
 
 ### 4. Run the Application
 

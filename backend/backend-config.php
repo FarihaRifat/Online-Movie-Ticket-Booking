@@ -1,124 +1,98 @@
 ﻿<?php
-// ============================================
-// Supabase PostgreSQL Configuration
-// ============================================
+/**
+ * Supabase PostgreSQL — production config is environment variables only (Railway).
+ *
+ * Set ONE of:
+ *   DATABASE_URL — Supabase Dashboard → Connect → Session pooler → URI (encode @ in password as %40)
+ * OR these together:
+ *   SUPABASE_POOLER_HOST, SUPABASE_DB_PASSWORD
+ *   optional: SUPABASE_POOLER_PORT (default 5432), SUPABASE_DB_USER (default postgres.<SUPABASE_PROJECT_REF>),
+ *             SUPABASE_DB_NAME (default postgres), SUPABASE_PROJECT_REF (default matches your Supabase project ref)
+ */
 
 if (!headers_sent()) {
     header("Access-Control-Allow-Origin: *");
     header("Content-Type: application/json");
-    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
     header("Access-Control-Allow-Headers: Content-Type");
 }
 
-/**
- * IPv4 for hostname when local DNS only returns AAAA (Railway has no IPv6 to Supabase).
- */
-function resolve_ipv4_for_host(string $hostname): ?string
+function respond_db_not_configured(): void
 {
-    $ip = @gethostbyname($hostname);
-    if ($ip !== $hostname && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-        return $ip;
-    }
-
-    if (function_exists("dns_get_record")) {
-        $records = @dns_get_record($hostname, DNS_A);
-        if (is_array($records)) {
-            foreach ($records as $r) {
-                if (!empty($r["ip"]) && filter_var($r["ip"], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                    return $r["ip"];
-                }
-            }
-        }
-    }
-
-    $url = "https://dns.google/resolve?name=" . rawurlencode($hostname) . "&type=A";
-    $ctx = stream_context_create([
-        "http" => [
-            "timeout" => 5,
-            "header" => "Accept: application/dns-json\r\n",
-        ],
+    http_response_code(503);
+    echo json_encode([
+        "success" => false,
+        "error" => "database_not_configured",
+        "message" => "Railway: add variable DATABASE_URL (Supabase → Connect → Session pooler URI). If your password contains @, use %40 instead of @. Alternative: SUPABASE_POOLER_HOST + SUPABASE_DB_PASSWORD (+ optional SUPABASE_DB_USER).",
     ]);
-    $json = @file_get_contents($url, false, $ctx);
-    if ($json === false) {
+    exit;
+}
+
+/**
+ * @return array{host:string,port:int,dbname:string,user:string,password:string}|null
+ */
+function parse_postgres_url(string $url): ?array
+{
+    $url = preg_replace('#^postgresql:#i', "postgres:", trim($url));
+    $parts = parse_url($url);
+    if ($parts === false || empty($parts["host"])) {
         return null;
     }
-    $data = json_decode($json, true);
-    if (!empty($data["Answer"]) && is_array($data["Answer"])) {
-        foreach ($data["Answer"] as $ans) {
-            if (($ans["type"] ?? null) === 1 && !empty($ans["data"])) {
-                $a = trim($ans["data"], '"');
-                if (filter_var($a, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                    return $a;
-                }
-            }
-        }
-    }
 
-    return null;
+    return [
+        "host" => (string) $parts["host"],
+        "port" => isset($parts["port"]) ? (int) $parts["port"] : 5432,
+        "dbname" => isset($parts["path"]) ? ltrim((string) $parts["path"], "/") ?: "postgres" : "postgres",
+        "user" => isset($parts["user"]) ? rawurldecode((string) $parts["user"]) : "",
+        "password" => isset($parts["pass"]) ? rawurldecode((string) $parts["pass"]) : "",
+    ];
 }
 
-$projectRef = "bxlwxucefflxeiyqeoew";
+$projectRef = getenv("SUPABASE_PROJECT_REF") ?: "bxlwxucefflxeiyqeoew";
 
-$db_config = [
-    "host" => "db.{$projectRef}.supabase.co",
-    "port" => 5432,
-    "dbname" => "postgres",
-    "user" => "postgres",
-    "password" => "Fariha@8827",
-];
+$db_config = null;
 
-// Paste full URI from Supabase → Connect → Session pooler (IPv4) or Transaction pooler. URL-encode @ in password (e.g. %40).
 $dbUrl = getenv("DATABASE_URL");
-if (is_string($dbUrl) && $dbUrl !== "") {
-    $parts = parse_url($dbUrl);
-    if ($parts !== false && !empty($parts["host"])) {
-        $db_config["host"] = $parts["host"];
-        $db_config["port"] = isset($parts["port"]) ? (int) $parts["port"] : 5432;
-        $db_config["dbname"] = isset($parts["path"]) ? ltrim((string) $parts["path"], "/") : "postgres";
-        $db_config["user"] = isset($parts["user"]) ? rawurldecode((string) $parts["user"]) : $db_config["user"];
-        $db_config["password"] = isset($parts["pass"]) ? rawurldecode((string) $parts["pass"]) : $db_config["password"];
+if (is_string($dbUrl) && trim($dbUrl) !== "") {
+    $db_config = parse_postgres_url($dbUrl);
+    if ($db_config === null || $db_config["user"] === "" || $db_config["password"] === "") {
+        respond_db_not_configured();
     }
-} elseif (getenv("RAILWAY_ENVIRONMENT") !== false) {
-    // db.* (incl. port 6543) often resolves IPv6-only — unreachable on Railway. Use Session pooler (IPv4): Supabase → Connect → Session pooler.
-    $poolerHost = getenv("SUPABASE_POOLER_HOST");
-    if (is_string($poolerHost) && $poolerHost !== "") {
-        $db_config["host"] = $poolerHost;
-        $db_config["port"] = (int) (getenv("SUPABASE_POOLER_PORT") ?: 5432);
-        $db_config["user"] = getenv("SUPABASE_POOLER_USER") ?: "postgres.{$projectRef}";
-    } else {
-        $region = getenv("SUPABASE_REGION") ?: "ap-south-1";
-        $db_config["host"] = "aws-0-{$region}.pooler.supabase.com";
-        $db_config["port"] = 5432;
-        $db_config["user"] = "postgres.{$projectRef}";
+} else {
+    $poolHost = getenv("SUPABASE_POOLER_HOST");
+    $password = getenv("SUPABASE_DB_PASSWORD");
+    if (!is_string($poolHost) || $poolHost === "" || $password === false || $password === "") {
+        respond_db_not_configured();
     }
+    $db_config = [
+        "host" => $poolHost,
+        "port" => (int) (getenv("SUPABASE_POOLER_PORT") ?: 5432),
+        "dbname" => getenv("SUPABASE_DB_NAME") ?: "postgres",
+        "user" => getenv("SUPABASE_DB_USER") ?: ("postgres." . $projectRef),
+        "password" => (string) $password,
+    ];
 }
+
+$host = $db_config["host"];
+$port = (int) $db_config["port"];
+$dbname = $db_config["dbname"];
+$user = $db_config["user"];
+$password = $db_config["password"];
+
+$dsn = "pgsql:host={$host};port={$port};dbname={$dbname};sslmode=require";
 
 try {
-    $host = $db_config["host"];
-    $port = (int) $db_config["port"];
-    $dbname = $db_config["dbname"];
-
-    // Never use hostaddr for *.supabase.co: libpq must use hostname for pooler tenant routing; db.* is often IPv6-only anyway.
-    $skipHostaddr = str_contains($host, ".supabase.co");
-    $ipv4 = $skipHostaddr ? null : resolve_ipv4_for_host($host);
-    if ($ipv4 !== null) {
-        $dsn = "pgsql:hostaddr={$ipv4};host={$host};port={$port};dbname={$dbname};sslmode=require";
-    } else {
-        $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};sslmode=require";
-    }
-
     $conn = new PDO(
         $dsn,
-        $db_config["user"],
-        $db_config["password"],
+        $user,
+        $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => true,
         ]
     );
-
-    $conn->setAttribute(PDO::ATTR_TIMEOUT, 10);
-
+    $conn->setAttribute(PDO::ATTR_TIMEOUT, 15);
 } catch (PDOException $e) {
     http_response_code(500);
     die(json_encode([
@@ -167,7 +141,6 @@ try {
 
     $conn->exec("CREATE INDEX IF NOT EXISTS idx_times_movie_id ON times(movie_id)");
     $conn->exec("CREATE INDEX IF NOT EXISTS idx_bookings_movie_id ON bookings(movie_id)");
-
 } catch (PDOException $e) {
     error_log("Table creation error: " . $e->getMessage());
 }

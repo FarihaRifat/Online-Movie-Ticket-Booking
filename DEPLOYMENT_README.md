@@ -1,95 +1,49 @@
-﻿# ============================================
-# MOVIE TICKET BOOKING APP - DEPLOYMENT GUIDE
-# ============================================
+﻿# Movie Ticket Booking — Railway + Supabase (production)
 
-## 📋 DEPLOYMENT CHECKLIST
+## 1. Supabase
 
-### 1. SUPABASE DATABASE SETUP
-- [ ] Go to https://supabase.com
-- [ ] Create new project or use existing one
-- [ ] Go to SQL Editor in Supabase Dashboard
-- [ ] Copy and paste the entire contents of SUPABASE_SETUP.sql
-- [ ] Run the SQL script
-- [ ] Verify tables are created: movies, times, bookings
+1. Create/open project at [supabase.com](https://supabase.com).
+2. **SQL Editor** → run the full script from `SUPABASE_SETUP.sql`.
+3. Confirm tables: `movies`, `bookings` (and `times` if used).
 
-### 2. VERIFY DATABASE CONNECTION
-- [ ] Check that your Supabase credentials are correct in backend-config.php
-- [ ] Test connection by running the app locally
+## 2. Railway (backend)
 
-### 3. DEPLOYMENT STEPS
-- [ ] Deploy frontend to hosting service (Vercel, Netlify, etc.)
-- [ ] Deploy backend to hosting service (Heroku, Railway, etc.)
-- [ ] Update API endpoints in frontend configuration
-- [ ] Test booking functionality
+1. **New Project** → **Deploy from GitHub** → select this repo.
+2. **Root directory**: leave empty (uses repo root `Dockerfile`).
+3. **Variables** — add **one** of the following (required for the API to start):
 
-## 🔧 DATABASE SCHEMA
+### Option A (recommended)
 
-### Tables Created:
-1. **movies** - Movie information
-   - id (SERIAL PRIMARY KEY)
-   - title (VARCHAR(255))
-   - description (TEXT)
-   - poster_url (VARCHAR(500))
-   - price (DECIMAL(10,2))
-   - created_at (TIMESTAMP)
+`DATABASE_URL` = copy **Session pooler** URI from Supabase **Connect** (not “Direct” — Direct is IPv6-only and fails on Railway).
 
-2. **times** - Showtimes for movies
-   - id (SERIAL PRIMARY KEY)
-   - movie_id (INT, FOREIGN KEY)
-   - time (VARCHAR(10))
-   - created_at (TIMESTAMP)
+- If your DB password contains `@`, replace it with **`%40`** in the URL.
 
-3. **bookings** - Ticket bookings
-   - id (SERIAL PRIMARY KEY)
-   - movie_id (INT, FOREIGN KEY)
-   - showtime (VARCHAR(255))
-   - seats (VARCHAR(255))
-   - total_amount (DECIMAL(10,2))
-   - contact_number (VARCHAR(20))
-   - created_at (TIMESTAMP)
+### Option B
 
-### Indexes Created:
-- idx_times_movie_id
-- idx_bookings_movie_id
-- idx_bookings_contact
+- `SUPABASE_POOLER_HOST` — pooler hostname from the same Session pooler screen (e.g. `aws-0-REGION.pooler.supabase.com`).
+- `SUPABASE_DB_PASSWORD` — database password.
+- Optional: `SUPABASE_POOLER_PORT` (default `5432`), `SUPABASE_DB_USER` (default `postgres.YOUR_PROJECT_REF`), `SUPABASE_PROJECT_REF`, `SUPABASE_DB_NAME`.
 
-## 🚀 QUICK START
+4. Deploy. **Health check:** `GET /api/health` (no database).
 
-1. **Setup Supabase Database:**
-   ```sql
-   -- Run SUPABASE_SETUP.sql in Supabase SQL Editor
-   ```
+5. Test: `https://YOUR-RAILWAY-URL.up.railway.app/api/movies` → should return `"success": true` and a `data` array.
 
-2. **Deploy Backend:**
-   - Upload backend/ folder to hosting service
-   - Ensure PHP 8.2+ with PDO PostgreSQL extension
-   - Update database credentials if needed
+## 3. Netlify (frontend)
 
-3. **Deploy Frontend:**
-   - Upload frontend/ folder to hosting service
-   - Update API_ENDPOINTS in apiConfig.js if backend URL changes
+1. Connect repo; **Base directory** `frontend`, build `npm run build`, publish `dist`.
+2. If the Railway URL changes, set build variable **`VITE_API_BASE_URL`** to your Railway base (no trailing slash), then redeploy the site.
 
-4. **Test Booking:**
-   - Create booking through frontend
-   - Check Supabase dashboard - booking should appear in bookings table
+## 4. Verify
 
-## ✅ VERIFICATION STEPS
+- [ ] `/api/health` returns `{"ok":true,...}`
+- [ ] `/api/movies` lists movies
+- [ ] Booking creates a row in Supabase `bookings`
 
-After deployment, verify:
-- [ ] Movies load from database
-- [ ] Booking creates entry in Supabase bookings table
-- [ ] Teacher can see bookings in Supabase dashboard
-- [ ] All CRUD operations work (Create, Read, Update, Delete movies)
+## Troubleshooting
 
-## 🔍 TROUBLESHOOTING
-
-If bookings don'\''t appear in Supabase:
-1. Check backend-config.php credentials
-2. Verify Supabase project is active
-3. Check PHP error logs
-4. Test database connection manually
-
-## 📞 SUPPORT
-
-Your app is now configured for Supabase PostgreSQL deployment!
-All bookings will be stored in your Supabase database for your teacher to verify.
+| Symptom | Fix |
+|--------|-----|
+| `database_not_configured` | Set `DATABASE_URL` or pooler host + password variables. |
+| IPv6 / network unreachable | Use **Session pooler** URI, not Direct `db.*:5432`. |
+| `Tenant or user not found` | Wrong pooler host/region — copy host exactly from Supabase Connect. |
+| Update/delete movie fails | Backend routes `POST /api/movies/update` and `POST /api/movies/delete` (fixed in router). |

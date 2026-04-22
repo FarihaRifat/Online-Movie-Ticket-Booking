@@ -1,18 +1,10 @@
-// API Configuration for Movie Ticket Booking App
-// Update these URLs when deploying to production
+// Production API base: set VITE_API_BASE_URL in Netlify (or .env) if your Railway URL changes.
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "https://online-movie-ticket-booking-production.up.railway.app").replace(/\/$/, "");
 
 export const API_ENDPOINTS = {
-  // For local development
-  // getMovies: 'http://localhost:8000/api/movies',
-  // createMovie: 'http://localhost:8000/api/movies',
-  // updateMovie: 'http://localhost:8000/api/movies/update',
-  // deleteMovie: 'http://localhost:8000/api/movies/delete',
-  // bookSeats: 'http://localhost:8000/api/bookings',
-
-  // For production deployment
-  getMovies: 'https://online-movie-ticket-booking-production.up.railway.app/api/movies',
-  createMovie: 'https://online-movie-ticket-booking-production.up.railway.app/api/movies',
-  updateMovie: 'https://online-movie-ticket-booking-production.up.railway.app/api/movies/update',
-  deleteMovie: 'https://online-movie-ticket-booking-production.up.railway.app/api/movies/delete',
-  bookSeats: 'https://online-movie-ticket-booking-production.up.railway.app/api/bookings',
+  getMovies: `${API_BASE}/api/movies`,
+  createMovie: `${API_BASE}/api/movies`,
+  updateMovie: `${API_BASE}/api/movies/update`,
+  deleteMovie: `${API_BASE}/api/movies/delete`,
+  bookSeats: `${API_BASE}/api/bookings`,
 };

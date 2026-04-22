@@ -1,63 +1,80 @@
 <?php
-// Buffer so UTF-8 BOM / stray bytes in included files cannot break header() calls.
 if (ob_get_level() === 0) {
     ob_start();
 }
 
-require_once 'backend-config.php';
+$rawUri = $_SERVER["REQUEST_URI"] ?? "/";
+$requestPath = explode("?", $rawUri, 2)[0];
+$path = trim($requestPath, "/");
+$method = $_SERVER["REQUEST_METHOD"] ?? "GET";
 
-// Handle preflight requests (CORS)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+// Health check without database (Railway + monitoring)
+if ($path === "api/health" && $method === "GET") {
+    header("Access-Control-Allow-Origin: *");
+    header("Content-Type: application/json");
+    echo json_encode(["ok" => true, "service" => "movie-ticket-api"]);
+    exit;
+}
+
+require_once "backend-config.php";
+
+if ($method === "OPTIONS") {
     http_response_code(200);
     exit();
 }
 
-// Get the request method and path
-$method = $_SERVER['REQUEST_METHOD'];
-$request = $_SERVER['REQUEST_URI'];
+$pathParts = $path === "" ? [] : explode("/", $path);
 
-// Remove query string from request URI
-$request = explode('?', $request)[0];
-
-// Remove leading slash and split by /
-$path = trim($request, '/');
-$pathParts = explode('/', $path);
-
-// Route the request
-if ($pathParts[0] === 'api') {
-    $endpoint = $pathParts[1] ?? '';
-
-    switch ($endpoint) {
-        case 'movies':
-            if ($method === 'GET') {
-                require_once 'backend-getMovies.php';
-            } elseif ($method === 'POST') {
-                require_once 'backend-createMovie.php';
-            } elseif ($method === 'PUT') {
-                require_once 'backend-updateMovie.php';
-            } elseif ($method === 'DELETE') {
-                require_once 'backend-deleteMovie.php';
-            } else {
-                http_response_code(405);
-                echo json_encode(['error' => 'Method not allowed']);
-            }
-            break;
-
-        case 'bookings':
-            if ($method === 'POST') {
-                require_once 'backend-bookSeats.php';
-            } else {
-                http_response_code(405);
-                echo json_encode(['error' => 'Method not allowed']);
-            }
-            break;
-
-        default:
-            http_response_code(404);
-            echo json_encode(['error' => 'Endpoint not found']);
-            break;
-    }
-} else {
+if (($pathParts[0] ?? "") !== "api") {
     http_response_code(404);
-    echo json_encode(['error' => 'API endpoint not found']);
+    echo json_encode(["error" => "API endpoint not found"]);
+    exit();
+}
+
+$endpoint = $pathParts[1] ?? "";
+$sub = $pathParts[2] ?? "";
+
+switch ($endpoint) {
+    case "movies":
+        if ($method === "GET") {
+            require_once "backend-getMovies.php";
+            break;
+        }
+        if ($method === "POST") {
+            if ($sub === "update") {
+                require_once "backend-updateMovie.php";
+            } elseif ($sub === "delete") {
+                require_once "backend-deleteMovie.php";
+            } elseif ($sub === "") {
+                require_once "backend-createMovie.php";
+            } else {
+                http_response_code(404);
+                echo json_encode(["error" => "Unknown movies subpath"]);
+            }
+            break;
+        }
+        if ($method === "PUT") {
+            require_once "backend-updateMovie.php";
+            break;
+        }
+        if ($method === "DELETE") {
+            require_once "backend-deleteMovie.php";
+            break;
+        }
+        http_response_code(405);
+        echo json_encode(["error" => "Method not allowed"]);
+        break;
+
+    case "bookings":
+        if ($method === "POST") {
+            require_once "backend-bookSeats.php";
+        } else {
+            http_response_code(405);
+            echo json_encode(["error" => "Method not allowed"]);
+        }
+        break;
+
+    default:
+        http_response_code(404);
+        echo json_encode(["error" => "Endpoint not found"]);
 }

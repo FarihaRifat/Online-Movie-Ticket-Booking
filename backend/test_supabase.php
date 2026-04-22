@@ -1,27 +1,24 @@
 ﻿<?php
-// Test Supabase PostgreSQL connection
-$db_host = "db.bxlwxucefflxeiyqeoew.supabase.co";
-$db_port = 5432;
-$db_name = "postgres";
-$db_user = "postgres";
-$db_password = "Fariha@8827";
-
-try {
-    $pdo = new PDO(
-        "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require",
-        $db_user,
-        $db_password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-    echo "✓ Connected to Supabase PostgreSQL successfully!\n";
-    
-    // Check if bookings table exists
-    $stmt = $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'bookings'");
-    $table_exists = (int)$stmt->fetchColumn() > 0;
-    
-    echo $table_exists ? "✓ Bookings table exists\n" : "✗ Bookings table does not exist\n";
-    
-} catch (PDOException $e) {
-    echo "✗ Connection failed: " . $e->getMessage() . "\n";
+// Optional CLI test: DATABASE_URL must be set (same as Railway).
+$url = getenv("DATABASE_URL");
+if (!$url) {
+    fwrite(STDERR, "Set DATABASE_URL (Session pooler URI from Supabase).\n");
+    exit(1);
 }
-?>
+
+$url = preg_replace('#^postgresql:#i', "postgres:", trim($url));
+$parts = parse_url($url);
+if ($parts === false || empty($parts["host"])) {
+    fwrite(STDERR, "Invalid DATABASE_URL.\n");
+    exit(1);
+}
+
+$host = $parts["host"];
+$port = isset($parts["port"]) ? (int) $parts["port"] : 5432;
+$dbname = isset($parts["path"]) ? ltrim((string) $parts["path"], "/") : "postgres";
+$user = isset($parts["user"]) ? rawurldecode((string) $parts["user"]) : "";
+$pass = isset($parts["pass"]) ? rawurldecode((string) $parts["pass"]) : "";
+
+$dsn = "pgsql:host={$host};port={$port};dbname={$dbname};sslmode=require";
+$pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+echo "Connected.\n";
