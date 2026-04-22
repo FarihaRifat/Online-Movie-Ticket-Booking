@@ -10,10 +10,9 @@
 
 | Name | ID | Section | Role |
 |------|----|---------|------|
-| Fadia Rahman Jule | 241-115-067 | - | Frontend (Netlify) |
-| Mst. Fariha Jahan Rifat | 241-115-074 | - | Frontend (Netlify), Backend (PHP, Railway), Database (Supabase PostgreSQL) |
-| Anusree Chando Tuly | 241-115-093 | - | Frontend (Netlify, CSS), Database (Supabase) |
-| Maisha Tarannum Newaz | - | - | Backend (Railway, PHP) |
+| Member 1 | - | - | Frontend + Integration |
+| Member 2 | - | - | Backend API |
+| Member 3 | - | - | Database + Testing |
 
 ## Individual Contribution
 
@@ -24,7 +23,7 @@
 | Fadia Rahman Jule (241-115-067) | Frontend deployment and implementation using Netlify. |
 | Mst. Fariha Jahan Rifat (241-115-074) | Worked on frontend (Netlify), backend implementation in PHP with Railway deployment, and database setup in Supabase PostgreSQL. |
 | Anusree Chando Tuly (241-115-093) | Worked on frontend (Netlify and CSS) and contributed to Supabase database tasks. |
-| Maisha Tarannum Newaz | Worked on backend implementation using PHP and Railway deployment. |
+| Maisha Tarannum Newaz (241-115-095) | Worked on backend implementation using PHP and Railway deployment. |
 
 ## Project Objective
 
