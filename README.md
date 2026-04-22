@@ -10,9 +10,10 @@
 
 | Name | ID | Section | Role |
 |------|----|---------|------|
-| Member 1 | - | - | Frontend + Integration |
-| Member 2 | - | - | Backend API |
-| Member 3 | - | - | Database + Testing |
+| Fadia Rahman Jule | 241-115-067 | - | Frontend (Netlify) |
+| Mst. Fariha Jahan Rifat | 241-115-074 | - | Frontend (Netlify), Backend (PHP, Railway), Database (Supabase PostgreSQL) |
+| Anusree Chando Tuly | 241-115-093 | - | Frontend (Netlify, CSS), Database (Supabase) |
+| Maisha Tarannum Newaz | - | - | Backend (Railway, PHP) |
 
 ## Individual Contribution
 
@@ -20,9 +21,10 @@
 
 | Member | Contribution |
 |--------|--------------|
-| Member 1 | Built frontend pages/components (`HomePage`, `BookingPage`, `ReceiptPage`), integrated API calls, UI/UX polishing. |
-| Member 2 | Implemented backend API routes and CRUD logic for movies plus booking endpoint in PHP. |
-| Member 3 | Designed PostgreSQL schema, prepared SQL setup, connected Supabase, tested deployments and bug fixes. |
+| Fadia Rahman Jule (241-115-067) | Frontend deployment and implementation using Netlify. |
+| Mst. Fariha Jahan Rifat (241-115-074) | Worked on frontend (Netlify), backend implementation in PHP with Railway deployment, and database setup in Supabase PostgreSQL. |
+| Anusree Chando Tuly (241-115-093) | Worked on frontend (Netlify and CSS) and contributed to Supabase database tasks. |
+| Maisha Tarannum Newaz | Worked on backend implementation using PHP and Railway deployment. |
 
 ## Project Objective
 
